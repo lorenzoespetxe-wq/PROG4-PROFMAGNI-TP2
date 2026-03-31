@@ -1,5 +1,6 @@
 // importamos useState, que es una función nativa de React que gestiona la memoria de corto plazo
-import { useState } from 'react';
+// (Añadido useEffect para gestionar el guardado en localStorage)
+import { useState, useEffect } from 'react';
 
 // Luego importamos los componentes que creamos, y los tipos (participante y filtrado)
 import RegistrationForm from './components/RegistrationForm';
@@ -49,8 +50,25 @@ const INITIAL_PARTICIPANTS: Participant[] = [
 export default function App() {
 
   // Vamos a ir guardando en memoria la variable participantes.
-  // Ahora iniciamos el estado con INITIAL_PARTICIPANTS en lugar de un array vacío [].
-  const [participants, setParticipants] = useState<Participant[]>(INITIAL_PARTICIPANTS);
+  // Ahora iniciamos el estado leyendo localStorage, o con INITIAL_PARTICIPANTS en lugar de un array vacío [].
+  const [participants, setParticipants] = useState<Participant[]>(() => {
+    const savedParticipants = localStorage.getItem('participants');
+    if (savedParticipants) {
+      try {
+        return JSON.parse(savedParticipants);
+      } catch (error) {
+        return INITIAL_PARTICIPANTS;
+      }
+    }
+    return INITIAL_PARTICIPANTS;
+  });
+
+  // Hook useEffect: guarda en el navegador (localStorage) 
+  // cada vez que cambia la variable participantes.
+  useEffect(() => {
+    // esta linea v v es el efecto: guarda en el navegador un JSON con el array de particpantes.
+    localStorage.setItem('participants', JSON.stringify(participants));
+  }, [participants]); // disparador: cuando participants cambia.
 
   // Similarmente, guardamos en memoria los filtros que están puestos en la interfaz,
   // estos solo se pueden modificar a través de setFilters y se refrescará la interfaz cada
@@ -72,10 +90,11 @@ export default function App() {
     setParticipants([...participants, participantWithId]); // ejecuta setParticipants, le agrega el participante nuevo al arreglo y actualiza el estado.
   };
 
-  // NUEVO: Función para eliminar un participante por su ID.
-  // Utiliza filter para crear un nuevo array que excluye al participante con el ID especificado.
+  // Para eliminar un participante, debe recibir un id, lo recibira de el componente hijo:
   const handleDeleteParticipant = (id: number) => {
-    setParticipants(participants.filter(p => p.id !== id));
+    // recorre el arreglo, y por cada participante revisa si el id es distinto 
+    // al que quiero borrar, y devuelve true cuando es distino.
+    setParticipants(participants.filter(p => p.id !== id)); // arma de nuevo el array con los true.
   };
 
   // filter participantes esta llamando a  vv esto vv , un método nativo de los arrays en JScript
